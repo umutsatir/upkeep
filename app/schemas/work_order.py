@@ -11,7 +11,6 @@ class WorkOrderCreate(BaseModel):
     title: str
     description: str
     asset_id: str
-    created_by: str
     priority: WorkOrderPriority = WorkOrderPriority.MEDIUM
     due_date: Optional[datetime] = None
     notes: str = ""

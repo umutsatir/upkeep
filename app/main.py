@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import connect_db, close_db, get_db
 from app.api.routes import (
+    auth,
     work_orders,
     assets,
     maintenance,
@@ -38,6 +39,7 @@ app.add_middleware(
 )
 
 # --- routers ---
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(work_orders.router, prefix="/api/v1/work-orders", tags=["Work Orders"])
 app.include_router(assets.router, prefix="/api/v1/assets", tags=["Assets"])
 app.include_router(maintenance.router, prefix="/api/v1/maintenance", tags=["Maintenance"])
