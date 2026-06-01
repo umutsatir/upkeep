@@ -1,5 +1,6 @@
 // OWNER: MEMBER-1
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 const NAV = [
   { to: '/',            label: 'Dashboard',   icon: HomeIcon },
@@ -10,17 +11,23 @@ const NAV = [
 ]
 
 export default function Layout() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100">
       {/* Sidebar */}
       <aside className="flex w-60 flex-shrink-0 flex-col bg-brand-900">
-        {/* Logo */}
         <div className="flex h-16 items-center gap-2 px-5">
           <WrenchIcon className="h-6 w-6 text-brand-100" />
           <span className="text-lg font-bold tracking-tight text-white">Upkeep</span>
         </div>
 
-        {/* Nav links */}
         <nav className="flex-1 space-y-0.5 px-3 py-4">
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -41,8 +48,7 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="border-t border-brand-700 px-5 py-4">
+        <div className="border-t border-brand-700 px-4 py-4">
           <p className="text-xs text-brand-100/60">Upkeep CMMS v0.1</p>
         </div>
       </aside>
@@ -51,18 +57,25 @@ export default function Layout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top bar */}
         <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
-          <span className="text-sm text-gray-500">
-            {/* TODO (MEMBER-1): breadcrumb or page title */}
-          </span>
+          <span />
           <div className="flex items-center gap-3">
-            {/* TODO (MEMBER-1): user avatar / logout button once auth is wired */}
-            <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center">
-              <span className="text-xs font-bold text-white">U</span>
-            </div>
+            {user && (
+              <span className="text-sm text-gray-600">
+                {user.full_name}
+                <span className="ml-1.5 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700 capitalize">
+                  {user.role}
+                </span>
+              </span>
+            )}
+            <button
+              onClick={handleLogout}
+              className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+            >
+              Log out
+            </button>
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
@@ -71,7 +84,7 @@ export default function Layout() {
   )
 }
 
-// ── Inline icon components (heroicons outline style, no extra dep) ──────────
+// ── Icons ──────────────────────────────────────────────────────────────────
 
 function WrenchIcon({ className }) {
   return (
