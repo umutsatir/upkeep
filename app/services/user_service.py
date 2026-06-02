@@ -1,42 +1,53 @@
 # OWNER: MEMBER-1
 from __future__ import annotations
 
+from typing import Optional
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.core.exceptions import DuplicateError
+from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate, UserUpdate
 
 
 class UserService:
-    """Business logic for user management and authentication.
-
-    TODO (MEMBER-1):
-    - hash passwords with bcrypt before passing to the repository.
-    - implement authenticate(email, password) -> User | None.
-    - implement generate_token(user) -> str using python-jose / PyJWT.
-    - add role-based permission checks (can_user_do(user, action) helper).
-    """
-
     def __init__(self, db: AsyncIOMotorDatabase) -> None:
         self._repo = UserRepository(db)
 
     async def create_user(self, payload: UserCreate) -> User:
-        """TODO (MEMBER-1): hash payload.password, build User, call repo.create."""
-        raise NotImplementedError
+        if await self._repo.get_by_email(payload.email):
+            raise DuplicateError("email", payload.email)
+        user = User(
+            full_name=payload.full_name,
+            email=payload.email,
+            hashed_password=hash_password(payload.password),
+            role=payload.role,
+            department=payload.department,
+        )
+        return await self._repo.create(user)
 
-    async def get_user(self, user_id: str) -> User | None:
-        """TODO (MEMBER-1)"""
-        raise NotImplementedError
+    async def authenticate(self, email: str, password: str) -> Optional[str]:
+        """Returns a JWT access token, or None if credentials are wrong."""
+        user = await self._repo.get_by_email(email)
+        if user is None or not verify_password(password, user.hashed_password):
+            return None
+        return create_access_token(user.id)
+
+    async def get_user(self, user_id: str) -> Optional[User]:
+        return await self._repo.get_by_id(user_id)
 
     async def list_users(self, skip: int = 0, limit: int = 100) -> list[User]:
-        """TODO (MEMBER-1)"""
-        raise NotImplementedError
+        return await self._repo.list(skip=skip, limit=limit)
 
-    async def update_user(self, user_id: str, payload: UserUpdate) -> User | None:
-        """TODO (MEMBER-1)"""
-        raise NotImplementedError
+    async def update_user(self, user_id: str, payload: UserUpdate) -> Optional[User]:
+        user = await self._repo.get_by_id(user_id)
+        if user is None:
+            return None
+        for field, value in payload.model_dump(exclude_none=True).items():
+            setattr(user, field, value)
+        return await self._repo.update(user)
 
     async def delete_user(self, user_id: str) -> bool:
-        """TODO (MEMBER-1)"""
-        raise NotImplementedError
+        return await self._repo.delete(user_id)

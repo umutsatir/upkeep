@@ -1,5 +1,7 @@
 // OWNER: MEMBER-1
-import { NavLink, Outlet } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 const NAV = [
   { to: '/',            label: 'Dashboard',   icon: HomeIcon },
@@ -9,61 +11,182 @@ const NAV = [
   { to: '/inventory',   label: 'Inventory',   icon: ArchiveIcon },
 ]
 
-export default function Layout() {
+const ROLE_COLORS = {
+  admin:       'bg-violet-500/20 text-violet-300',
+  supervisor:  'bg-sky-500/20 text-sky-300',
+  technician:  'bg-emerald-500/20 text-emerald-300',
+  viewer:      'bg-gray-500/20 text-gray-300',
+}
+
+function UserAvatar({ name }) {
+  const initials = name
+    ? name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+    : '?'
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      {/* Sidebar */}
-      <aside className="flex w-60 flex-shrink-0 flex-col bg-brand-900">
-        {/* Logo */}
-        <div className="flex h-16 items-center gap-2 px-5">
-          <WrenchIcon className="h-6 w-6 text-brand-100" />
-          <span className="text-lg font-bold tracking-tight text-white">Upkeep</span>
-        </div>
+    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">
+      {initials}
+    </span>
+  )
+}
 
-        {/* Nav links */}
-        <nav className="flex-1 space-y-0.5 px-3 py-4">
-          {NAV.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-brand-700 text-white'
-                    : 'text-brand-100 hover:bg-brand-700/60 hover:text-white'
-                }`
-              }
+function SidebarContent({ user, onLogout, onClose }) {
+  return (
+    <>
+      {/* Logo */}
+      <div className="flex h-16 items-center gap-3 px-5 border-b border-white/5 flex-shrink-0">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
+          <WrenchIcon className="h-4 w-4 text-white" />
+        </div>
+        <div className="flex-1">
+          <span className="text-sm font-bold tracking-wide text-white">Upkeep</span>
+          <span className="block text-[10px] font-medium tracking-widest text-gray-500 uppercase">CMMS</span>
+        </div>
+        {/* Close button — only shown on mobile */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden flex-shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-white/10 hover:text-white transition-colors"
+            aria-label="Close menu"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+          Menu
+        </p>
+        {NAV.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            onClick={onClose}
+            className={({ isActive }) =>
+              `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon className={`h-[18px] w-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`} />
+                {label}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* User section */}
+      <div className="border-t border-white/5 p-3 flex-shrink-0">
+        {user && (
+          <div className="flex items-center gap-3 rounded-lg px-2 py-2">
+            <UserAvatar name={user.full_name} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-white">{user.full_name}</p>
+              <span className={`inline-block mt-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize ${ROLE_COLORS[user.role] ?? ROLE_COLORS.viewer}`}>
+                {user.role}
+              </span>
+            </div>
+            <button
+              onClick={onLogout}
+              title="Log out"
+              className="flex-shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-white/10 hover:text-white transition-colors"
             >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
+              <LogoutIcon className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
 
-        {/* Footer */}
-        <div className="border-t border-brand-700 px-5 py-4">
-          <p className="text-xs text-brand-100/60">Upkeep CMMS v0.1</p>
-        </div>
+export default function Layout() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const backdropRef = useRef(null)
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
+
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [sidebarOpen])
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+
+      {/* ── Desktop sidebar (always visible ≥ lg) ── */}
+      <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col bg-gray-900 shadow-xl">
+        <SidebarContent user={user} onLogout={handleLogout} onClose={null} />
       </aside>
 
-      {/* Main area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top bar */}
-        <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
-          <span className="text-sm text-gray-500">
-            {/* TODO (MEMBER-1): breadcrumb or page title */}
-          </span>
-          <div className="flex items-center gap-3">
-            {/* TODO (MEMBER-1): user avatar / logout button once auth is wired */}
-            <div className="h-8 w-8 rounded-full bg-brand-600 flex items-center justify-center">
-              <span className="text-xs font-bold text-white">U</span>
+      {/* ── Mobile sidebar overlay ── */}
+      <div
+        className={`fixed inset-0 z-40 lg:hidden transition-opacity duration-300 ${
+          sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setSidebarOpen(false)}
+      >
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/50" />
+        {/* Drawer */}
+        <aside
+          className={`absolute inset-y-0 left-0 flex w-72 flex-col bg-gray-900 shadow-xl transition-transform duration-300 ease-in-out ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SidebarContent
+            user={user}
+            onLogout={handleLogout}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </aside>
+      </div>
+
+      {/* ── Main area ── */}
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+
+        {/* Mobile top bar */}
+        <header className="flex lg:hidden h-14 flex-shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 shadow-sm">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            aria-label="Open menu"
+          >
+            <MenuIcon className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600">
+              <WrenchIcon className="h-3.5 w-3.5 text-white" />
             </div>
+            <span className="text-sm font-bold text-gray-900">Upkeep</span>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>
@@ -71,7 +194,7 @@ export default function Layout() {
   )
 }
 
-// ── Inline icon components (heroicons outline style, no extra dep) ──────────
+// ── Icons ──────────────────────────────────────────────────────────────────
 
 function WrenchIcon({ className }) {
   return (
@@ -123,6 +246,33 @@ function ArchiveIcon({ className }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
         d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+    </svg>
+  )
+}
+
+function LogoutIcon({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+    </svg>
+  )
+}
+
+function MenuIcon({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+    </svg>
+  )
+}
+
+function XIcon({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M6 18L18 6M6 6l12 12" />
     </svg>
   )
 }
