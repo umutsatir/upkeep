@@ -6,10 +6,39 @@ import { getAll as getAssets }     from '../api/assets.js'
 import { getAll as getMaintenance } from '../api/maintenance.js'
 import { getLowStock }              from '../api/inventory.js'
 import PageHeader from '../components/PageHeader.jsx'
+import Table from '../components/Table.jsx'
+import StatusBadge from '../components/StatusBadge.jsx'
 
-// TODO (MEMBER-1): replace summary cards with real API counts once the
-// backend services are implemented. Low-stock data can come from MEMBER-4's
-// /inventory/low-stock endpoint (already wired in api/inventory.js).
+const RECENT_COLUMNS = [
+  { key: 'title', header: 'Title' },
+  {
+    key: 'status',
+    header: 'Status',
+    render: (val) => <StatusBadge value={val} />,
+  },
+  {
+    key: 'priority',
+    header: 'Priority',
+    render: (val) => <StatusBadge value={val} />,
+  },
+  {
+    key: 'due_date',
+    header: 'Due Date',
+    render: (val) => val ? new Date(val).toLocaleDateString() : '—',
+  },
+  {
+    key: 'id',
+    header: '',
+    render: (val) => (
+      <Link
+        to={`/work-orders/${val}`}
+        className="text-brand-600 hover:text-brand-800 text-xs font-medium underline underline-offset-2"
+      >
+        View
+      </Link>
+    ),
+  },
+]
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -18,6 +47,9 @@ export default function Dashboard() {
     schedules: null,
     lowStock: null,
   })
+  const [recentWOs, setRecentWOs]       = useState([])
+  const [recentLoading, setRecentLoading] = useState(true)
+  const [recentError, setRecentError]   = useState(null)
 
   useEffect(() => {
     // Fetch all four in parallel; failures are silenced per-card.
@@ -34,6 +66,12 @@ export default function Dashboard() {
         lowStock:   stock.status === 'fulfilled' ? stock.value.length : '—',
       })
     })
+
+    // Recent work orders (latest 5)
+    getWorkOrders()
+      .then((all) => setRecentWOs(all.slice(0, 5)))
+      .catch((err) => setRecentError(err.message))
+      .finally(() => setRecentLoading(false))
   }, [])
 
   return (
@@ -61,12 +99,25 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Placeholder recent-activity panel */}
-      <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-gray-400">
-        <p className="text-sm">
-          TODO (MEMBER-1): add a recent work-orders table here using the reusable{' '}
-          <code className="rounded bg-gray-100 px-1 text-xs">&lt;Table /&gt;</code> component.
-        </p>
+      {/* Recent work orders */}
+      <div className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+            Recent Work Orders
+          </h2>
+          <Link
+            to="/work-orders"
+            className="text-xs font-medium text-brand-600 hover:text-brand-800 underline underline-offset-2"
+          >
+            View all
+          </Link>
+        </div>
+        <Table
+          columns={RECENT_COLUMNS}
+          data={recentWOs}
+          loading={recentLoading}
+          error={recentError}
+        />
       </div>
     </div>
   )
