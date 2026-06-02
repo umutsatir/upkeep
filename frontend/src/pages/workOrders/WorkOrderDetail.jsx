@@ -87,12 +87,12 @@ export default function WorkOrderDetail() {
   const actions = TRANSITIONS[wo.status] ?? []
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-4 sm:space-y-6">
       <PageHeader
         title={wo.title}
         subtitle={`Work Order · ${wo.id}`}
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link
               to={`/work-orders/${id}/edit`}
               className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -111,7 +111,7 @@ export default function WorkOrderDetail() {
 
       {/* Details card */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Status"    value={<StatusBadge value={wo.status} />} />
           <Field label="Priority"  value={<StatusBadge value={wo.priority} />} />
           <Field label="Asset ID"  value={<code className="rounded bg-gray-100 px-1 text-xs">{wo.asset_id}</code>} />
