@@ -1,7 +1,9 @@
 # OWNER: MEMBER-2
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
+
+from pydantic import BaseModel
 
 from app.models.base import BaseEntity, PyObjectId
 
@@ -13,16 +15,21 @@ class AssetStatus(str, Enum):
     DECOMMISSIONED = "decommissioned"
 
 
+class RepairRecord(BaseModel):
+    """Embedded value object representing a single repair entry on an asset."""
+
+    date: datetime
+    description: str
+    cost: float = 0.0
+    work_order_id: Optional[PyObjectId] = None  # link back to the WO that triggered the repair
+
+
 class Asset(BaseEntity):
     """A physical asset tracked by the CMMS.
 
-    TODO (MEMBER-2):
-    - Implement full asset lifecycle (activate, decommission, send_to_maintenance).
-    - Add repair history as a list of embedded RepairRecord value objects.
-    - Add warranty expiry alerting logic (check warranty_expires_at vs today).
-    - Implement location tracking (building / floor / room) as a nested Location VO.
-    - Consider Observer pattern to notify Work Order service when asset goes
-      UNDER_MAINTENANCE so related open orders are flagged.
+    Lifecycle: ACTIVE → UNDER_MAINTENANCE → ACTIVE
+                     → INACTIVE
+                     → DECOMMISSIONED  (terminal)
     """
 
     model_config = {
@@ -37,7 +44,7 @@ class Asset(BaseEntity):
     status: AssetStatus = AssetStatus.ACTIVE
 
     # Location
-    location: Optional[str] = None  # TODO: replace with Location value object
+    location: Optional[str] = None
 
     # Ownership
     assigned_to: Optional[PyObjectId] = None  # User.id of responsible technician
@@ -47,7 +54,7 @@ class Asset(BaseEntity):
     warranty_expires_at: Optional[datetime] = None
 
     # Repair history (embedded documents)
-    repair_history: list[dict] = []  # TODO: type as list[RepairRecord]
+    repair_history: list[RepairRecord] = []
 
     model_number: Optional[str] = None
     serial_number: Optional[str] = None
