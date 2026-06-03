@@ -1,7 +1,7 @@
 # OWNER: MEMBER-3
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from app.models.maintenance import MaintenanceSchedule, TriggerType
@@ -29,7 +29,11 @@ class TimeBasedStrategy(MaintenanceTriggerStrategy):
     ) -> bool:
         if schedule.next_due_at is None:
             return False
-        return schedule.next_due_at <= now
+        # Ensure both datetimes are timezone-aware for comparison
+        next_due = schedule.next_due_at
+        if next_due.tzinfo is None:
+            next_due = next_due.replace(tzinfo=timezone.utc)
+        return next_due <= now
 
 
 class UsageBasedStrategy(MaintenanceTriggerStrategy):

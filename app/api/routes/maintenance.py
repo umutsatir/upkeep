@@ -20,7 +20,7 @@ def _service(db: AsyncIOMotorDatabase = Depends(get_db)) -> MaintenanceService:
     return MaintenanceService(db)
 
 
-@router.post("/", response_model=MaintenanceScheduleResponse, status_code=201)
+@router.post("", response_model=MaintenanceScheduleResponse, status_code=201)
 async def create_schedule(
     payload: MaintenanceScheduleCreate,
     svc: MaintenanceService = Depends(_service),
@@ -30,7 +30,7 @@ async def create_schedule(
     return MaintenanceScheduleResponse(**schedule.model_dump())
 
 
-@router.get("/", response_model=list[MaintenanceScheduleResponse])
+@router.get("", response_model=list[MaintenanceScheduleResponse])
 async def list_schedules(
     skip: int = 0,
     limit: int = 100,
@@ -43,6 +43,15 @@ async def list_schedules(
     else:
         schedules = await svc.list(skip=skip, limit=limit)
     return [MaintenanceScheduleResponse(**schedule.model_dump()) for schedule in schedules]
+
+
+@router.post("/evaluate")
+async def evaluate_due_schedules(
+    svc: MaintenanceService = Depends(_service),
+    current_user: User = Depends(get_current_user),
+):
+    generated = await svc.evaluate_due_schedules(created_by=current_user.id)
+    return {"generated_work_orders": generated}
 
 
 @router.get("/{schedule_id}", response_model=MaintenanceScheduleResponse)
@@ -79,12 +88,3 @@ async def delete_schedule(
     deleted = await svc.delete(schedule_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="maintenance schedule not found")
-
-
-@router.post("/evaluate")
-async def evaluate_due_schedules(
-    svc: MaintenanceService = Depends(_service),
-    current_user: User = Depends(get_current_user),
-):
-    generated = await svc.evaluate_due_schedules(created_by=current_user.id)
-    return {"generated_work_orders": generated}

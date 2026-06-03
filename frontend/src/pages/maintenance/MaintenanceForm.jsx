@@ -32,7 +32,8 @@ export default function MaintenanceForm() {
     setLoading(true)
     setError(null)
 
-    Promise.all([getAssets(), id ? getById(id) : Promise.resolve(null)])
+    // TODO (MEMBER-3): Re-enable asset loading after MEMBER-2 implements asset management
+    Promise.all([Promise.resolve([]), id ? getById(id) : Promise.resolve(null)])
       .then(([assetList, schedule]) => {
         setAssets(assetList)
         if (schedule) {
@@ -104,7 +105,8 @@ export default function MaintenanceForm() {
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* TODO (MEMBER-3): Re-enable asset selection after MEMBER-2 implements asset management */}
+          {/* <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-medium text-gray-700">Asset</span>
               <select
@@ -122,6 +124,29 @@ export default function MaintenanceForm() {
                 ))}
               </select>
             </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700">Priority</span>
+              <select
+                name="generated_wo_priority"
+                value={form.generated_wo_priority}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+              >
+                {PRIORITIES.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div> */}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Asset selection temporarily disabled — uses FIRE-001 by default */}
+            <p className="text-sm text-gray-600 italic">
+              ℹ️ Using FIRE-001 (Fire Alarm System) as default asset for testing
+            </p>
 
             <label className="block">
               <span className="text-sm font-medium text-gray-700">Priority</span>

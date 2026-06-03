@@ -15,31 +15,41 @@ def _service(db: AsyncIOMotorDatabase = Depends(get_db)) -> AssetService:
 
 @router.post("/", response_model=AssetResponse, status_code=201)
 async def create_asset(payload: AssetCreate, svc: AssetService = Depends(_service)):
-    """TODO (MEMBER-2)"""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    """Create a new asset (stub for MEMBER-2)."""
+    asset = await svc.create(payload)
+    return AssetResponse(**asset.model_dump())
 
 
 @router.get("/", response_model=list[AssetResponse])
 async def list_assets(skip: int = 0, limit: int = 100, svc: AssetService = Depends(_service)):
-    """TODO (MEMBER-2)"""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    """List all assets (stub for MEMBER-2)."""
+    assets = await svc.list(skip=skip, limit=limit)
+    return [AssetResponse(**a.model_dump()) for a in assets]
 
 
 @router.get("/{asset_id}", response_model=AssetResponse)
 async def get_asset(asset_id: str, svc: AssetService = Depends(_service)):
-    """TODO (MEMBER-2)"""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    """Get asset by ID (stub for MEMBER-2)."""
+    asset = await svc.get(asset_id)
+    if asset is None:
+        raise HTTPException(status_code=404, detail="asset not found")
+    return AssetResponse(**asset.model_dump())
 
 
 @router.patch("/{asset_id}", response_model=AssetResponse)
 async def update_asset(
     asset_id: str, payload: AssetUpdate, svc: AssetService = Depends(_service)
 ):
-    """TODO (MEMBER-2)"""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    """Update asset (stub for MEMBER-2)."""
+    asset = await svc.update(asset_id, payload)
+    if asset is None:
+        raise HTTPException(status_code=404, detail="asset not found")
+    return AssetResponse(**asset.model_dump())
 
 
 @router.delete("/{asset_id}", status_code=204)
 async def delete_asset(asset_id: str, svc: AssetService = Depends(_service)):
-    """TODO (MEMBER-2)"""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    """Delete asset (stub for MEMBER-2)."""
+    deleted = await svc.delete(asset_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="asset not found")

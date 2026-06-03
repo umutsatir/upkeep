@@ -9,7 +9,8 @@ from app.models.work_order import WorkOrderPriority
 
 
 class MaintenanceScheduleCreate(BaseModel):
-    asset_id: str
+    # TODO (MEMBER-3): Make asset_id required again after MEMBER-2 implements asset management
+    asset_id: Optional[str] = None  # Temporarily optional; defaults to FIRE-001 (hardcoded)
     title: str
     description: str
     trigger_type: TriggerType = TriggerType.TIME_BASED

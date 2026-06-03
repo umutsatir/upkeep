@@ -1,7 +1,7 @@
 // OWNER: MEMBER-1
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { create } from '../../api/users.js'
+import { register } from '../../api/auth.js'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -19,7 +19,7 @@ export default function Register() {
     setError(null)
     setLoading(true)
     try {
-      await create(form)
+      await register(form)
       navigate('/login', { replace: true })
     } catch (err) {
       setError(err.message)

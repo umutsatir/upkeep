@@ -28,7 +28,12 @@ class MaintenanceService:
 
     @staticmethod
     def _resolve_object_id(value: Optional[str]) -> Optional[PyObjectId]:
-        return PyObjectId(value) if value is not None else None
+        if not value or not value.strip():
+            return None
+        try:
+            return PyObjectId(value)
+        except (ValueError, TypeError):
+            return None
 
     @staticmethod
     def _validate_schedule(schedule: MaintenanceSchedule) -> None:
@@ -46,8 +51,12 @@ class MaintenanceService:
         return schedule.next_due_at
 
     async def create(self, payload: MaintenanceScheduleCreate) -> MaintenanceSchedule:
+        # TODO (MEMBER-3): Remove hardcoded FIRE-001 after MEMBER-2 implements asset management
+        FIRE_001_ID = "6a20a6f8ed6858a4bc9bfcfd"  # Hardcoded FIRE-001 asset ID for testing
+        asset_id = payload.asset_id or FIRE_001_ID
+
         schedule = MaintenanceSchedule(
-            asset_id=PyObjectId(payload.asset_id),
+            asset_id=PyObjectId(asset_id),
             title=payload.title,
             description=payload.description,
             trigger_type=payload.trigger_type,
