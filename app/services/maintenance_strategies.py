@@ -1,0 +1,55 @@
+# OWNER: MEMBER-3
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from datetime import datetime
+from typing import Optional
+
+from app.models.maintenance import MaintenanceSchedule, TriggerType
+
+
+class MaintenanceTriggerStrategy(ABC):
+    @abstractmethod
+    def is_due(
+        self,
+        schedule: MaintenanceSchedule,
+        *,
+        now: datetime,
+        current_usage_hours: Optional[float] = None,
+    ) -> bool:
+        ...
+
+
+class TimeBasedStrategy(MaintenanceTriggerStrategy):
+    def is_due(
+        self,
+        schedule: MaintenanceSchedule,
+        *,
+        now: datetime,
+        current_usage_hours: Optional[float] = None,
+    ) -> bool:
+        if schedule.next_due_at is None:
+            return False
+        return schedule.next_due_at <= now
+
+
+class UsageBasedStrategy(MaintenanceTriggerStrategy):
+    def is_due(
+        self,
+        schedule: MaintenanceSchedule,
+        *,
+        now: datetime,
+        current_usage_hours: Optional[float] = None,
+    ) -> bool:
+        if schedule.usage_threshold_hours is None:
+            return False
+        if current_usage_hours is None:
+            return False
+        return current_usage_hours >= schedule.usage_threshold_hours
+
+
+def get_trigger_strategy(trigger_type: TriggerType) -> MaintenanceTriggerStrategy:
+    if trigger_type == TriggerType.TIME_BASED:
+        return TimeBasedStrategy()
+    if trigger_type == TriggerType.USAGE_BASED:
+        return UsageBasedStrategy()
+    raise ValueError(f"Unknown trigger type: {trigger_type}")

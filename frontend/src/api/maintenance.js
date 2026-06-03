@@ -37,4 +37,7 @@ export function evaluateDue() {
   return client.post(`${BASE}/evaluate`).then((r) => r.data)
 }
 
-// TODO (MEMBER-3): add listByAsset(assetId)
+/** @returns {Promise<Array>} */
+export function listByAsset(assetId, params = {}) {
+  return getAll({ ...params, asset_id: assetId })
+}

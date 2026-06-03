@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.models.maintenance import TriggerType
+from app.models.work_order import WorkOrderPriority
 
 
 class MaintenanceScheduleCreate(BaseModel):
@@ -14,17 +15,20 @@ class MaintenanceScheduleCreate(BaseModel):
     trigger_type: TriggerType = TriggerType.TIME_BASED
     interval_days: Optional[int] = None
     usage_threshold_hours: Optional[float] = None
-    generated_wo_priority: str = "medium"
+    current_usage_hours: Optional[float] = None
+    generated_wo_priority: WorkOrderPriority = WorkOrderPriority.MEDIUM
     assigned_to: Optional[str] = None
 
 
 class MaintenanceScheduleUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    trigger_type: Optional[TriggerType] = None
     interval_days: Optional[int] = None
     usage_threshold_hours: Optional[float] = None
+    current_usage_hours: Optional[float] = None
     is_active: Optional[bool] = None
-    generated_wo_priority: Optional[str] = None
+    generated_wo_priority: Optional[WorkOrderPriority] = None
     assigned_to: Optional[str] = None
 
 
@@ -36,10 +40,11 @@ class MaintenanceScheduleResponse(BaseModel):
     trigger_type: TriggerType
     interval_days: Optional[int]
     usage_threshold_hours: Optional[float]
+    current_usage_hours: Optional[float]
     is_active: bool
     last_triggered_at: Optional[datetime]
     next_due_at: Optional[datetime]
-    generated_wo_priority: str
+    generated_wo_priority: WorkOrderPriority
     assigned_to: Optional[str]
     created_at: datetime
     updated_at: datetime
