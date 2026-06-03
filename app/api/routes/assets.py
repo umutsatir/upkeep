@@ -19,7 +19,7 @@ def _svc(db: AsyncIOMotorDatabase = Depends(get_db)) -> AssetService:
     return AssetService(db)
 
 
-@router.post("/", response_model=AssetResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AssetResponse, status_code=status.HTTP_201_CREATED)
 async def create_asset(
     payload: AssetCreate,
     svc: AssetService = Depends(_svc),
@@ -44,7 +44,7 @@ async def list_expiring_warranties(
     return [AssetResponse.model_validate(a) for a in assets]
 
 
-@router.get("/", response_model=list[AssetResponse])
+@router.get("", response_model=list[AssetResponse])
 async def list_assets(
     skip: int = 0,
     limit: int = 100,

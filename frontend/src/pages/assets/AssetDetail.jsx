@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getById, remove } from '../../api/assets.js'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import PageHeader from '../../components/PageHeader.jsx'
+import ConfirmModal from '../../components/ConfirmModal.jsx'
 
 export default function AssetDetail() {
   const { id } = useParams()
@@ -12,6 +13,7 @@ export default function AssetDetail() {
   const [asset, setAsset] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -22,7 +24,7 @@ export default function AssetDetail() {
   }, [id])
 
   async function handleDelete() {
-    if (!window.confirm('Are you sure you want to delete this asset?')) return
+    setShowDeleteModal(false)
     try {
       await remove(id)
       navigate('/assets', { replace: true })
@@ -49,7 +51,7 @@ export default function AssetDetail() {
               Edit
             </Link>
             <button
-              onClick={handleDelete}
+              onClick={() => setShowDeleteModal(true)}
               className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
             >
               Delete
@@ -111,6 +113,14 @@ export default function AssetDetail() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Delete Asset"
+        message="Are you sure you want to delete this asset? This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </div>
   )
 }
