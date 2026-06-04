@@ -32,7 +32,7 @@ export default function MaintenanceDetail() {
 
   return (
     <div>
-      <PageHeader title="Schedule Detail" subtitle={subtitle} />
+      <PageHeader title="Schedule Detail" subtitle={subtitle} backTo="/maintenance" />
 
       {loading ? (
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-gray-400">

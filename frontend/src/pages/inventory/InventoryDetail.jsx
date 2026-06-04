@@ -146,6 +146,7 @@ export default function InventoryDetail() {
       <PageHeader
         title={item.name}
         subtitle={`SKU: ${item.sku}`}
+        backTo="/inventory"
         action={
           <div className="flex items-center gap-2">
             <Link

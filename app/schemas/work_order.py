@@ -24,11 +24,19 @@ class WorkOrderUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+class InventoryUsage(BaseModel):
+    """A single inventory item consumed during work order completion."""
+
+    inventory_item_id: str
+    quantity: int
+
+
 class WorkOrderStatusTransition(BaseModel):
     """Used by status-transition endpoints (assign, start, complete, …)."""
 
     new_status: WorkOrderStatus
     assigned_to: Optional[str] = None  # required when transitioning to ASSIGNED
+    parts_used: list[InventoryUsage] = []  # populated when transitioning to COMPLETED
 
 
 class WorkOrderResponse(BaseModel):

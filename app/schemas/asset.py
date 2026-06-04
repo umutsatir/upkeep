@@ -42,6 +42,8 @@ class RepairRecordResponse(BaseModel):
     cost: float
     work_order_id: Optional[str] = None
 
+    model_config = {"from_attributes": True}
+
 
 class AssetResponse(BaseModel):
     id: str

@@ -42,6 +42,7 @@ export default function AssetDetail() {
       <PageHeader
         title={asset.name}
         subtitle={asset.asset_tag}
+        backTo="/assets"
         action={
           <div className="flex flex-wrap gap-2">
             <Link

@@ -3,12 +3,16 @@ import { useState, useEffect, useRef } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
-const NAV = [
+const BASE_NAV = [
   { to: '/',            label: 'Dashboard',   icon: HomeIcon },
   { to: '/work-orders', label: 'Work Orders', icon: ClipboardIcon },
   { to: '/assets',      label: 'Assets',      icon: CubeIcon },
   { to: '/maintenance', label: 'Maintenance', icon: CalendarIcon },
   { to: '/inventory',   label: 'Inventory',   icon: ArchiveIcon },
+]
+
+const ADMIN_NAV = [
+  { to: '/users', label: 'Users', icon: UsersIcon },
 ]
 
 const ROLE_COLORS = {
@@ -29,7 +33,33 @@ function UserAvatar({ name }) {
   )
 }
 
+function NavItem({ to, label, icon: Icon, onClose }) {
+  return (
+    <NavLink
+      to={to}
+      end={to === '/'}
+      onClick={onClose}
+      className={({ isActive }) =>
+        `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+          isActive
+            ? 'bg-brand-600 text-white shadow-sm'
+            : 'text-gray-400 hover:bg-white/5 hover:text-white'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <Icon className={`h-[18px] w-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`} />
+          {label}
+        </>
+      )}
+    </NavLink>
+  )
+}
+
 function SidebarContent({ user, onLogout, onClose }) {
+  const isAdmin = user?.role === 'admin'
+
   return (
     <>
       {/* Logo */}
@@ -58,28 +88,20 @@ function SidebarContent({ user, onLogout, onClose }) {
         <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
           Menu
         </p>
-        {NAV.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            onClick={onClose}
-            className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive
-                  ? 'bg-brand-600 text-white shadow-sm'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <Icon className={`h-[18px] w-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`} />
-                {label}
-              </>
-            )}
-          </NavLink>
+        {BASE_NAV.map((item) => (
+          <NavItem key={item.to} {...item} onClose={onClose} />
         ))}
+
+        {isAdmin && (
+          <>
+            <p className="mt-4 mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+              Admin
+            </p>
+            {ADMIN_NAV.map((item) => (
+              <NavItem key={item.to} {...item} onClose={onClose} />
+            ))}
+          </>
+        )}
       </nav>
 
       {/* User section */}
@@ -273,6 +295,15 @@ function XIcon({ className }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+}
+
+function UsersIcon({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+        d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
     </svg>
   )
 }

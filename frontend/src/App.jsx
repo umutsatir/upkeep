@@ -6,7 +6,7 @@ import Layout from './components/Layout.jsx'
 
 import Dashboard       from './pages/Dashboard.jsx'
 import Login           from './pages/auth/Login.jsx'
-import Register        from './pages/auth/Register.jsx'
+import UserList        from './pages/users/UserList.jsx'
 
 import WorkOrderList   from './pages/workOrders/WorkOrderList.jsx'
 import WorkOrderDetail from './pages/workOrders/WorkOrderDetail.jsx'
@@ -31,7 +31,7 @@ export default function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/login"    element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<Navigate to="/login" replace />} />
 
           {/* Protected routes — all wrapped in sidebar Layout */}
           <Route
@@ -62,6 +62,8 @@ export default function App() {
             <Route path="/inventory/new"       element={<InventoryForm />} />
             <Route path="/inventory/:id"       element={<InventoryDetail />} />
             <Route path="/inventory/:id/edit"  element={<InventoryForm />} />
+
+            <Route path="/users" element={<UserList />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
