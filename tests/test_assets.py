@@ -99,7 +99,7 @@ async def test_list_assets_empty(client):
         "app.api.routes.assets.AssetService.list",
         new=AsyncMock(return_value=[]),
     ):
-        resp = await client.get("/api/v1/assets/")
+        resp = await client.get("/api/v1/assets")
     assert resp.status_code == 200
     assert resp.json() == []
 
@@ -110,7 +110,7 @@ async def test_list_assets_returns_items(client, sample_asset):
         "app.api.routes.assets.AssetService.list",
         new=AsyncMock(return_value=[sample_asset]),
     ):
-        resp = await client.get("/api/v1/assets/")
+        resp = await client.get("/api/v1/assets")
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 1
@@ -145,7 +145,7 @@ async def test_create_asset(client, sample_asset):
         "app.api.routes.assets.AssetService.create",
         new=AsyncMock(return_value=sample_asset),
     ):
-        resp = await client.post("/api/v1/assets/", json={
+        resp = await client.post("/api/v1/assets", json={
             "name": "Main HVAC",
             "asset_tag": "HVAC-001",
             "category": "Electrical",
@@ -160,7 +160,7 @@ async def test_create_asset_duplicate_tag_returns_409(client):
         "app.api.routes.assets.AssetService.create",
         new=AsyncMock(side_effect=DuplicateError("asset_tag", "HVAC-001")),
     ):
-        resp = await client.post("/api/v1/assets/", json={
+        resp = await client.post("/api/v1/assets", json={
             "name": "Duplicate",
             "asset_tag": "HVAC-001",
             "category": "Electrical",

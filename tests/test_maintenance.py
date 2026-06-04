@@ -49,7 +49,7 @@ async def test_list_maintenance_schedules_route(client):
     )
 
     with patch('app.api.routes.maintenance.MaintenanceService.list', new=AsyncMock(return_value=[sample_schedule])):
-        resp = await client.get('/api/v1/maintenance/')
+        resp = await client.get('/api/v1/maintenance')
 
     assert resp.status_code == 200
     data = resp.json()
