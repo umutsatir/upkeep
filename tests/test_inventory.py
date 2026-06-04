@@ -141,7 +141,7 @@ async def test_create_item(client, sample_item):
         new=AsyncMock(return_value=sample_item),
     ):
         resp = await client.post(
-            "/api/v1/inventory/",
+            "/api/v1/inventory",
             json={
                 "name": "Oil Filter",
                 "sku": "FLT-001",
@@ -161,7 +161,7 @@ async def test_create_item_duplicate_sku(client):
         new=AsyncMock(side_effect=ValueError("An item with SKU 'FLT-001' already exists")),
     ):
         resp = await client.post(
-            "/api/v1/inventory/",
+            "/api/v1/inventory",
             json={
                 "name": "Oil Filter",
                 "sku": "FLT-001",
@@ -178,7 +178,7 @@ async def test_list_items_empty(client):
         "app.services.inventory_service.InventoryService.list",
         new=AsyncMock(return_value=[]),
     ):
-        resp = await client.get("/api/v1/inventory/")
+        resp = await client.get("/api/v1/inventory")
     assert resp.status_code == 200
     assert resp.json() == []
 
@@ -189,7 +189,7 @@ async def test_list_items_returns_items(client, sample_item):
         "app.services.inventory_service.InventoryService.list",
         new=AsyncMock(return_value=[sample_item]),
     ):
-        resp = await client.get("/api/v1/inventory/")
+        resp = await client.get("/api/v1/inventory")
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 1
