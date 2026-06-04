@@ -1,9 +1,10 @@
 // OWNER: MEMBER-3
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../../components/PageHeader.jsx'
 import Table from '../../components/Table.jsx'
 import StatusBadge from '../../components/StatusBadge.jsx'
+import Pagination from '../../components/Pagination.jsx'
 import { getAll, evaluateDue } from '../../api/maintenance.js'
 
 const COLUMNS = [
@@ -53,10 +54,15 @@ const COLUMNS = [
 ]
 
 export default function MaintenanceList() {
-  const [schedules, setSchedules] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [notice, setNotice] = useState(null)
+  const [schedules, setSchedules]   = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [error, setError]           = useState(null)
+  const [notice, setNotice]         = useState(null)
+  const [search, setSearch]         = useState('')
+  const [triggerFilter, setTrigger] = useState('')
+  const [activeFilter, setActive]   = useState('')
+  const [page, setPage]             = useState(1)
+  const [pageSize, setPageSize]     = useState(20)
 
   useEffect(() => {
     setLoading(true)
@@ -66,6 +72,26 @@ export default function MaintenanceList() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return schedules.filter((s) => {
+      if (q && !s.title.toLowerCase().includes(q)) return false
+      if (triggerFilter && s.trigger_type !== triggerFilter) return false
+      if (activeFilter === 'active' && !s.is_active) return false
+      if (activeFilter === 'inactive' && s.is_active) return false
+      return true
+    })
+  }, [schedules, search, triggerFilter, activeFilter])
+
+  useEffect(() => { setPage(1) }, [filtered])
+
+  const paginated = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize],
+  )
+
+  const hasFilters = search || triggerFilter || activeFilter
 
   const onEvaluate = async () => {
     setNotice(null)
@@ -109,7 +135,57 @@ export default function MaintenanceList() {
         </div>
       )}
 
-      <Table columns={COLUMNS} data={schedules} loading={loading} error={error} />
+      <div className="mb-4 flex flex-wrap gap-2">
+        <input
+          type="search"
+          placeholder="Search by title…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-56 rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+        <select
+          value={triggerFilter}
+          onChange={(e) => setTrigger(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All trigger types</option>
+          <option value="time_based">Time based</option>
+          <option value="usage_based">Usage based</option>
+        </select>
+        <select
+          value={activeFilter}
+          onChange={(e) => setActive(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">Active &amp; inactive</option>
+          <option value="active">Active only</option>
+          <option value="inactive">Inactive only</option>
+        </select>
+        {hasFilters && (
+          <button
+            onClick={() => { setSearch(''); setTrigger(''); setActive(''); setPage(1) }}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            Clear
+          </button>
+        )}
+        {!loading && (
+          <span className="ml-auto self-center text-xs text-gray-400">
+            {filtered.length} of {schedules.length}
+          </span>
+        )}
+      </div>
+
+      <Table columns={COLUMNS} data={paginated} loading={loading} error={error} />
+      {!loading && (
+        <Pagination
+          total={filtered.length}
+          page={page}
+          pageSize={pageSize}
+          onPage={setPage}
+          onPageSize={(s) => { setPageSize(s); setPage(1) }}
+        />
+      )}
     </div>
   )
 }

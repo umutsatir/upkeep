@@ -23,7 +23,7 @@ def _service(db: AsyncIOMotorDatabase = Depends(get_db)) -> InventoryService:
 # ------------------------------------------------------------------
 
 
-@router.post("/", response_model=InventoryItemResponse, status_code=201)
+@router.post("", response_model=InventoryItemResponse, status_code=201)
 async def create_item(
     payload: InventoryItemCreate, svc: InventoryService = Depends(_service)
 ):
@@ -35,7 +35,7 @@ async def create_item(
     return _to_response(item)
 
 
-@router.get("/", response_model=list[InventoryItemResponse])
+@router.get("", response_model=list[InventoryItemResponse])
 async def list_items(
     skip: int = 0,
     limit: int = 100,

@@ -1,5 +1,6 @@
 # OWNER: MEMBER-3
 from fastapi import APIRouter, HTTPException, Depends, status
+from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.database import get_db
@@ -20,7 +21,7 @@ def _service(db: AsyncIOMotorDatabase = Depends(get_db)) -> MaintenanceService:
     return MaintenanceService(db)
 
 
-@router.post("/", response_model=MaintenanceScheduleResponse, status_code=201)
+@router.post("", response_model=MaintenanceScheduleResponse, status_code=201)
 async def create_schedule(
     payload: MaintenanceScheduleCreate,
     svc: MaintenanceService = Depends(_service),
@@ -30,11 +31,11 @@ async def create_schedule(
     return MaintenanceScheduleResponse(**schedule.model_dump())
 
 
-@router.get("/", response_model=list[MaintenanceScheduleResponse])
+@router.get("", response_model=list[MaintenanceScheduleResponse])
 async def list_schedules(
     skip: int = 0,
     limit: int = 100,
-    asset_id: str | None = None,
+    asset_id: Optional[str] = None,
     svc: MaintenanceService = Depends(_service),
     _: User = Depends(get_current_user),
 ):
