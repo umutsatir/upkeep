@@ -1,6 +1,6 @@
 // OWNER: MEMBER-1
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 
 export default function Login() {
@@ -80,9 +80,11 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-xs text-gray-400">
-          This system is restricted to authorized personnel only.
-          Contact your administrator to request access.
+        <p className="mt-4 text-center text-sm text-gray-500">
+          Don&apos;t have an account?{' '}
+          <Link to="/register" className="text-brand-600 hover:underline">
+            Register
+          </Link>
         </p>
       </div>
     </div>
