@@ -6,13 +6,25 @@ import Table from '../../components/Table.jsx'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import Pagination from '../../components/Pagination.jsx'
 import { getAll, evaluateDue } from '../../api/maintenance.js'
+import { getAll as getAllAssets } from '../../api/assets.js'
 
-const COLUMNS = [
+function buildColumns(assetMap) {
+  return [
   { key: 'title', header: 'Title' },
   {
     key: 'asset_id',
     header: 'Asset',
-    render: (val) => val || '—',
+    render: (val) =>
+      val ? (
+        <Link
+          to={`/assets/${val}`}
+          className="text-brand-600 hover:text-brand-800 text-xs font-medium underline underline-offset-2"
+        >
+          {assetMap[val] ?? val}
+        </Link>
+      ) : (
+        '—'
+      ),
   },
   {
     key: 'trigger_type',
@@ -51,10 +63,12 @@ const COLUMNS = [
       </Link>
     ),
   },
-]
+  ]
+}
 
 export default function MaintenanceList() {
   const [schedules, setSchedules]   = useState([])
+  const [assetMap, setAssetMap]     = useState({})
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState(null)
   const [notice, setNotice]         = useState(null)
@@ -67,8 +81,13 @@ export default function MaintenanceList() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    getAll()
-      .then(setSchedules)
+    Promise.all([getAll(), getAllAssets()])
+      .then(([scheduleData, assetData]) => {
+        setSchedules(scheduleData)
+        const map = {}
+        assetData.forEach((a) => { map[a.id] = a.name })
+        setAssetMap(map)
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
@@ -90,6 +109,8 @@ export default function MaintenanceList() {
     () => filtered.slice((page - 1) * pageSize, page * pageSize),
     [filtered, page, pageSize],
   )
+
+  const columns = useMemo(() => buildColumns(assetMap), [assetMap])
 
   const hasFilters = search || triggerFilter || activeFilter
 
@@ -176,7 +197,7 @@ export default function MaintenanceList() {
         )}
       </div>
 
-      <Table columns={COLUMNS} data={paginated} loading={loading} error={error} />
+      <Table columns={columns} data={paginated} loading={loading} error={error} />
       {!loading && (
         <Pagination
           total={filtered.length}

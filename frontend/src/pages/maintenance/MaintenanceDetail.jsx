@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PageHeader from '../../components/PageHeader.jsx'
 import { getById } from '../../api/maintenance.js'
+import { getById as getAssetById } from '../../api/assets.js'
 
 function renderRow(label, value) {
   return (
@@ -16,6 +17,7 @@ function renderRow(label, value) {
 export default function MaintenanceDetail() {
   const { id } = useParams()
   const [schedule, setSchedule] = useState(null)
+  const [assetName, setAssetName] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -23,7 +25,14 @@ export default function MaintenanceDetail() {
     setLoading(true)
     setError(null)
     getById(id)
-      .then(setSchedule)
+      .then((s) => {
+        setSchedule(s)
+        if (s.asset_id) {
+          getAssetById(s.asset_id)
+            .then((a) => setAssetName(a.name))
+            .catch(() => {})
+        }
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [id])
@@ -50,7 +59,7 @@ export default function MaintenanceDetail() {
                 to={`/assets/${schedule.asset_id}`}
                 className="text-brand-600 hover:text-brand-800 underline"
               >
-                {schedule.asset_id}
+                {assetName ?? schedule.asset_id}
               </Link>
             ))}
             {renderRow('Title', schedule.title)}
