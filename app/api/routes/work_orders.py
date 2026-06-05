@@ -22,7 +22,7 @@ def _svc(db: AsyncIOMotorDatabase = Depends(get_db)) -> WorkOrderService:
     return WorkOrderService(db)
 
 
-@router.post("/", response_model=WorkOrderResponse, status_code=201)
+@router.post("", response_model=WorkOrderResponse, status_code=201)
 async def create_work_order(
     payload: WorkOrderCreate,
     svc: WorkOrderService = Depends(_svc),
@@ -32,7 +32,7 @@ async def create_work_order(
     return WorkOrderResponse(**wo.model_dump())
 
 
-@router.get("/", response_model=list[WorkOrderResponse])
+@router.get("", response_model=list[WorkOrderResponse])
 async def list_work_orders(
     skip: int = 0,
     limit: int = 100,
@@ -82,6 +82,8 @@ async def transition_work_order(
         raise HTTPException(status_code=404, detail="work order not found")
     except InvalidTransitionError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     return WorkOrderResponse(**wo.model_dump())
 
 

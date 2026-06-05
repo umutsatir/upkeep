@@ -47,6 +47,8 @@ class MaintenanceService:
     def _compute_next_due_at(self, schedule: MaintenanceSchedule) -> Optional[datetime]:
         if schedule.trigger_type == TriggerType.TIME_BASED and schedule.interval_days is not None:
             anchor = schedule.last_triggered_at or schedule.created_at or self._utcnow()
+            if anchor.tzinfo is None:
+                anchor = anchor.replace(tzinfo=timezone.utc)
             return anchor + timedelta(days=schedule.interval_days)
         return schedule.next_due_at
 

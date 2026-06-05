@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getById, transition, remove } from '../../api/workOrders.js'
+import { getAll as getAllInventory } from '../../api/inventory.js'
 import StatusBadge from '../../components/StatusBadge.jsx'
 import PageHeader from '../../components/PageHeader.jsx'
 
@@ -39,8 +40,9 @@ export default function WorkOrderDetail() {
   const [wo, setWo]             = useState(null)
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
-  const [assignee, setAssignee] = useState('')
-  const [acting, setActing]     = useState(false)
+  const [assignee, setAssignee]         = useState('')
+  const [acting, setActing]             = useState(false)
+  const [showCompleteModal, setShowCompleteModal] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -50,7 +52,7 @@ export default function WorkOrderDetail() {
       .finally(() => setLoading(false))
   }, [id])
 
-  async function handleTransition(next, needsAssignee) {
+  async function handleTransition(next, needsAssignee, partsUsed = []) {
     if (needsAssignee && !assignee.trim()) {
       alert('Please enter the assignee user ID.')
       return
@@ -60,6 +62,7 @@ export default function WorkOrderDetail() {
       const updated = await transition(id, {
         new_status:  next,
         assigned_to: needsAssignee ? assignee.trim() : undefined,
+        parts_used:  partsUsed,
       })
       setWo(updated)
       setAssignee('')
@@ -67,6 +70,14 @@ export default function WorkOrderDetail() {
       setError(err.message)
     } finally {
       setActing(false)
+    }
+  }
+
+  function handleActionClick(next, needsAssignee) {
+    if (next === 'completed') {
+      setShowCompleteModal(true)
+    } else {
+      handleTransition(next, needsAssignee)
     }
   }
 
@@ -91,6 +102,7 @@ export default function WorkOrderDetail() {
       <PageHeader
         title={wo.title}
         subtitle={`Work Order · ${wo.id}`}
+        backTo="/work-orders"
         action={
           <div className="flex flex-wrap gap-2">
             <Link
@@ -150,7 +162,7 @@ export default function WorkOrderDetail() {
               <button
                 key={next}
                 disabled={acting}
-                onClick={() => handleTransition(next, needsAssignee)}
+                onClick={() => handleActionClick(next, needsAssignee)}
                 className={`rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${BTN[style]}`}
               >
                 {acting ? '…' : label}
@@ -174,6 +186,115 @@ export default function WorkOrderDetail() {
           </ul>
         </div>
       )}
+
+      {showCompleteModal && (
+        <CompleteModal
+          workOrderId={id}
+          onConfirm={(partsUsed) => {
+            setShowCompleteModal(false)
+            handleTransition('completed', false, partsUsed)
+          }}
+          onCancel={() => setShowCompleteModal(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+function CompleteModal({ onConfirm, onCancel }) {
+  const [inventory, setInventory]   = useState([])
+  const [loadingInv, setLoadingInv] = useState(true)
+  const [rows, setRows]             = useState([{ inventory_item_id: '', quantity: 1 }])
+
+  useEffect(() => {
+    getAllInventory({ limit: 200 })
+      .then(setInventory)
+      .finally(() => setLoadingInv(false))
+  }, [])
+
+  function addRow() {
+    setRows((prev) => [...prev, { inventory_item_id: '', quantity: 1 }])
+  }
+
+  function removeRow(index) {
+    setRows((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function updateRow(index, field, value) {
+    setRows((prev) => prev.map((r, i) => i === index ? { ...r, [field]: value } : r))
+  }
+
+  function handleConfirm() {
+    const parts = rows
+      .filter((r) => r.inventory_item_id)
+      .map((r) => ({ inventory_item_id: r.inventory_item_id, quantity: Number(r.quantity) }))
+    onConfirm(parts)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <h2 className="mb-1 text-base font-semibold text-gray-900">Complete Work Order</h2>
+        <p className="mb-4 text-sm text-gray-500">Select the inventory items used (optional).</p>
+
+        {loadingInv ? (
+          <p className="py-4 text-center text-sm text-gray-400">Loading inventory…</p>
+        ) : (
+          <div className="space-y-2">
+            {rows.map((row, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <select
+                  value={row.inventory_item_id}
+                  onChange={(e) => updateRow(i, 'inventory_item_id', e.target.value)}
+                  className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="">— select item —</option>
+                  {inventory.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ({item.sku}) · {item.quantity_on_hand} {item.unit} available
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  value={row.quantity}
+                  onChange={(e) => updateRow(i, 'quantity', e.target.value)}
+                  className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+                <button
+                  onClick={() => removeRow(i)}
+                  className="text-gray-400 hover:text-red-500"
+                  title="Remove row"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={addRow}
+              className="mt-1 text-sm text-blue-600 hover:underline"
+            >
+              + Add item
+            </button>
+          </div>
+        )}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+          >
+            Confirm Complete
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

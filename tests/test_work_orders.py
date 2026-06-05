@@ -129,8 +129,8 @@ class TestTerminalStates:
 
 def test_invalid_transition_error_message():
     err = InvalidTransitionError(WorkOrderStatus.CLOSED, WorkOrderStatus.OPEN)
-    assert "closed" in str(err)
-    assert "open" in str(err)
+    assert "CLOSED" in str(err)
+    assert "OPEN" in str(err)
 
 
 # ── API endpoint tests (service mocked) ────────────────────────────────────
@@ -153,7 +153,7 @@ async def test_list_work_orders_empty(client):
         "app.api.routes.work_orders.WorkOrderService.list",
         new=AsyncMock(return_value=[]),
     ):
-        resp = await client.get("/api/v1/work-orders/")
+        resp = await client.get("/api/v1/work-orders")
     assert resp.status_code == 200
     assert resp.json() == []
 
@@ -164,7 +164,7 @@ async def test_list_work_orders_returns_items(client, sample_wo):
         "app.api.routes.work_orders.WorkOrderService.list",
         new=AsyncMock(return_value=[sample_wo]),
     ):
-        resp = await client.get("/api/v1/work-orders/")
+        resp = await client.get("/api/v1/work-orders")
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 1
@@ -199,7 +199,7 @@ async def test_create_work_order(client, sample_wo):
         "app.api.routes.work_orders.WorkOrderService.create",
         new=AsyncMock(return_value=sample_wo),
     ):
-        resp = await client.post("/api/v1/work-orders/", json={
+        resp = await client.post("/api/v1/work-orders", json={
             "title": "Fix HVAC",
             "description": "unit broken",
             "asset_id": str(ObjectId()),

@@ -48,7 +48,7 @@ class WorkOrder(BaseEntity):
     priority: WorkOrderPriority = WorkOrderPriority.MEDIUM
 
     asset_id: PyObjectId
-    assigned_to: Optional[PyObjectId] = None  # User.id
+    assigned_to: Optional[str] = None  # User.id
     created_by: PyObjectId  # User.id
 
     due_date: Optional[datetime] = None

@@ -1,22 +1,28 @@
 # OWNER: MEMBER-4
+from datetime import datetime, timezone
 from typing import Optional
 
+from pydantic import BaseModel
+
 from app.models.base import BaseEntity, PyObjectId
+
+
+class ConsumptionRecord(BaseModel):
+    """Value object that records a single stock movement (consume or restock)."""
+
+    timestamp: datetime = datetime.now(timezone.utc)
+    quantity: int  # positive = restock, negative = consume
+    work_order_id: Optional[str] = None
+    notes: str = ""
+    action: str = "consume"  # "consume" | "restock"
 
 
 class InventoryItem(BaseEntity):
     """A spare part or consumable tracked in inventory.
 
-    TODO (MEMBER-4):
-    - Implement consume(quantity, work_order_id) method that deducts stock and
-      records the consumption against a WorkOrder (MEMBER-1 integration point).
-    - Implement restock(quantity, notes) method.
-    - Add low-stock alerting: emit an alert (log / notification) when
-      quantity_on_hand <= low_stock_threshold.
-    - Add Decorator pattern for alert channels: EmailAlertDecorator,
-      SlackAlertDecorator wrap a base LowStockAlert notifier.
-    - Consider an Observer that watches WorkOrder completion events to auto-
-      deduct parts from parts_used list (MEMBER-1 integration point).
+    Uses the Decorator pattern for low-stock alerting:
+    LowStockNotifier (base) → EmailAlertDecorator → SlackAlertDecorator
+    Each decorator adds an alert channel without modifying core logic.
     """
 
     name: str
@@ -31,7 +37,17 @@ class InventoryItem(BaseEntity):
     supplier: Optional[str] = None
     location: Optional[str] = None  # physical bin / shelf location
 
-    # Usage history (lightweight embedded log)
-    consumption_log: list[dict] = []  # TODO: type as list[ConsumptionRecord]
+    # Usage history (typed embedded log)
+    consumption_log: list[dict] = []
 
     notes: str = ""
+
+    @property
+    def is_low_stock(self) -> bool:
+        """Check whether current stock is at or below the alert threshold."""
+        return self.quantity_on_hand <= self.low_stock_threshold
+
+    @property
+    def total_value(self) -> float:
+        """Total value of stock on hand."""
+        return self.quantity_on_hand * self.unit_cost

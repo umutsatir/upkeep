@@ -22,13 +22,27 @@ class AssetCreate(BaseModel):
 
 
 class AssetUpdate(BaseModel):
+    model_config = {"protected_namespaces": ()}
     name: Optional[str] = None
     category: Optional[str] = None
     location: Optional[str] = None
     assigned_to: Optional[str] = None
     status: Optional[AssetStatus] = None
+    purchase_date: Optional[datetime] = None
     warranty_expires_at: Optional[datetime] = None
+    model_number: Optional[str] = None
+    serial_number: Optional[str] = None
     notes: Optional[str] = None
+
+
+class RepairRecordResponse(BaseModel):
+    """DTO for a single repair history entry."""
+    date: datetime
+    description: str
+    cost: float
+    work_order_id: Optional[str] = None
+
+    model_config = {"from_attributes": True}
 
 
 class AssetResponse(BaseModel):
@@ -44,7 +58,9 @@ class AssetResponse(BaseModel):
     model_number: Optional[str]
     serial_number: Optional[str]
     notes: str
+    repair_history: list[RepairRecordResponse] = []
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True, "protected_namespaces": ()}
+

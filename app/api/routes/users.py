@@ -21,7 +21,7 @@ async def me(current_user: User = Depends(get_current_user)):
     return UserResponse(**current_user.model_dump())
 
 
-@router.post("/", response_model=UserResponse, status_code=201)
+@router.post("", response_model=UserResponse, status_code=201)
 async def create_user(
     payload: UserCreate,
     svc: UserService = Depends(_svc),
@@ -34,7 +34,7 @@ async def create_user(
     return UserResponse(**user.model_dump())
 
 
-@router.get("/", response_model=list[UserResponse])
+@router.get("", response_model=list[UserResponse])
 async def list_users(
     skip: int = 0,
     limit: int = 100,

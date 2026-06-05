@@ -2,8 +2,11 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.database import connect_db, close_db, get_db
 from app.api.routes import (
@@ -38,6 +41,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logging.getLogger("upkeep").exception("Unhandled error on %s %s", request.method, request.url)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
 
 # --- routers ---
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { create, getById, update } from '../../api/workOrders.js'
+import { getAll as getAssets } from '../../api/assets.js'
 import PageHeader from '../../components/PageHeader.jsx'
 
 const PRIORITIES = ['low', 'medium', 'high', 'critical']
@@ -24,6 +25,13 @@ export default function WorkOrderForm() {
   const [error, setError]     = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(isEdit)
+  const [assets, setAssets]   = useState([])
+
+  useEffect(() => {
+    getAssets({ limit: 200 })
+      .then(setAssets)
+      .catch(() => {})
+  }, [])
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -107,15 +115,20 @@ export default function WorkOrderForm() {
           />
         </Field>
 
-        <Field label="Asset ID" required hint="Will be a dropdown once Assets module is merged (M2)">
-          <input
-            type="text"
+        <Field label="Asset" required>
+          <select
             required
             value={form.asset_id}
             onChange={set('asset_id')}
-            placeholder="e.g. 507f1f77bcf86cd799439011"
             className={inputCls}
-          />
+          >
+            <option value="">— Select an asset —</option>
+            {assets.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} {a.serial_number ? `(${a.serial_number})` : ''}
+              </option>
+            ))}
+          </select>
         </Field>
 
         <Field label="Priority">
