@@ -5,7 +5,7 @@ from app.repositories.base_repository import BaseRepository
 
 class InventoryRepository(BaseRepository[InventoryItem]):
     model_class = InventoryItem
-    collection_name = "inventory"
+    collection_name = "inventory_items"
 
     async def get_by_sku(self, sku: str):
         """TODO (MEMBER-4): Look up an item by its SKU."""
